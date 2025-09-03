@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>ระบบฝากซื้อ</title>
+  <style>
+    body {
+    background: linear-gradient(to right, #aec8da, #d6bace); 
+    font-family: "Tahoma", sans-serif;
+    margin: 0;
+    padding: 0;
+}
+table {
+    width: 80%;
+    margin: 20px auto;
+    border-collapse: collapse;
+    background-color: #ffffff; /* สีพื้นตาราง */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+th {
+    background-color: #5d9ce4; /* สีหัวตาราง */
+    color: white;
+    padding: 10px;
+    text-align: center;
+}
+
+td {
+    background-color: #f9f9f9; /* สีช่องตาราง */
+    padding: 10px;
+    text-align: center;
+    border-bottom: 1px solid #ddd;
+}
+
+tr:nth-child(even) td {
+    background-color: #f1f7ff; /* สลับสีแถวคู่ */
+}
+
+tr:hover td {
+    background-color: #e0f0ff; /* ไฮไลต์เมื่อเอาเมาส์ไปวาง */
+}
+
+
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    table {
+      border-collapse: collapse;
+      margin: auto;
+      width: 90%;
+    }
+    th, td {
+      border: 1px solid black;
+      padding: 8px;
+      text-align: center;
+    }
+    button {
+      margin: 5px;
+      padding: 5px 10px;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+    
+  <!-- หน้าแรก -->
+  <div id="homePage" class="container">
+    <div>
+        <img src="D:\comm\web\picture.JFIF" width="300" height = "400">
+      <h1>📦 ระบบฝากซื้อ 📦</h1>
+      <p>ยินดีต้อนรับเข้าสู่ระบบฝากซื้อ</p>
+      <button id="goToDeposit">ไปที่รายการฝากซื้อ</button>
+    </div>
+  </div>
+
+  <!-- หน้ารายการฝากซื้อ -->
+  <div id="depositPage" class="hidden">
+    <h2>📋 รายการฝากซื้อ 📋</h2>
+    <button id="backHome">⬅️ กลับหน้าแรก</button>
+    <button id="addColumnBtn">➕ เพิ่มคอลัมน์</button>
+    <button id="removeColumnBtn">➖ ลบคอลัมน์</button>
+    <br><br>
+
+    <table id="depositTable">
+      <thead>
+        <tr>
+          <th>สินค้า</th>
+          <th>ชื่อ</th>
+          <th>ราคา</th>
+          <th>สถานะ</th>
+          <th>ดำเนินการ</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+      <tfoot>
+        <tr>
+          <td><input type="text" placeholder="สินค้า"></td>
+          <td><input type="text" placeholder="ชื่อ"></td>
+          <td><input type="number" placeholder="ราคา"></td>
+          <td>
+            <select>
+              <option value="ยังไม่จ่าย">ยังไม่จ่าย</option>
+              <option value="จ่ายแล้ว">จ่ายแล้ว</option>
+            </select>
+          </td>
+          <td><button id="addBtn">เพิ่ม</button></td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <h3>📊 สรุปรายชื่อ</h3>
+    <div id="totalsByName"></div>
+    <h3 id="totalAll">ยอดรวมทั้งหมด: 0 บาท</h3>
+  </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const homePage = document.getElementById("homePage");
+  const depositPage = document.getElementById("depositPage");
+  const goToDepositBtn = document.getElementById("goToDeposit");
+  const backHomeBtn = document.getElementById("backHome");
+
+  const depositTable = document.getElementById("depositTable");
+  const tableBody = depositTable.querySelector("tbody");
+  const addBtn = document.getElementById("addBtn");
+
+  // เปลี่ยนหน้า
+  goToDepositBtn.addEventListener("click", () => {
+    homePage.classList.add("hidden");
+    depositPage.classList.remove("hidden");
+  });
+  backHomeBtn.addEventListener("click", () => {
+    depositPage.classList.add("hidden");
+    homePage.classList.remove("hidden");
+  });
+
+  // ฟังก์ชันลบ
+  function addDeleteHandler(button) {
+    button.addEventListener("click", function () {
+      if (confirm("คุณต้องการลบรายการนี้ใช่หรือไม่?")) {
+        button.closest("tr").remove();
+        updateTotals();
+      }
+    });
+  }
+
+  // ฟังก์ชันแก้ไข
+  function addEditHandler(button) {
+    button.addEventListener("click", function () {
+      const row = button.closest("tr");
+      const cells = row.querySelectorAll("td");
+
+      if (button.textContent === "แก้ไข") {
+        // เปลี่ยนเป็นโหมดแก้ไข
+        cells.forEach((cell, i) => {
+          if (i < cells.length - 1) { 
+            let value = cell.textContent.trim();
+            if (cell.querySelector("select")) {
+              let current = cell.querySelector("select").value;
+              cell.innerHTML = `
+                <select>
+                  <option value="ยังไม่จ่าย"${current==="ยังไม่จ่าย"?' selected':''}>ยังไม่จ่าย</option>
+                  <option value="จ่ายแล้ว"${current==="จ่ายแล้ว"?' selected':''}>จ่ายแล้ว</option>
+                </select>`;
+            } else {
+              cell.innerHTML = `<input type="text" value="${value}">`;
+            }
+          }
+        });
+        button.textContent = "บันทึก";
+      } else {
+        // เซฟค่า
+        cells.forEach((cell, i) => {
+          if (i < cells.length - 1) {
+            if (cell.querySelector("input")) {
+              cell.textContent = cell.querySelector("input").value;
+            } else if (cell.querySelector("select")) {
+              let sel = cell.querySelector("select").value;
+              cell.innerHTML = `
+                <select>
+                  <option value="ยังไม่จ่าย"${sel==="ยังไม่จ่าย"?' selected':''}>ยังไม่จ่าย</option>
+                  <option value="จ่ายแล้ว"${sel==="จ่ายแล้ว"?' selected':''}>จ่ายแล้ว</option>
+                </select>`;
+            }
+          }
+        });
+        button.textContent = "แก้ไข";
+        updateTotals();
+      }
+    });
+  }
+
+  // ปุ่มเพิ่มแถว
+  addBtn.addEventListener("click", function () {
+    const headerCells = depositTable.querySelectorAll("thead th");
+    const footerInputs = depositTable.querySelectorAll("tfoot input, tfoot select");
+    const newRow = document.createElement("tr");
+
+    let emptyCheck = false;
+
+    headerCells.forEach((th, index) => {
+      let td = document.createElement("td");
+
+      if (th.textContent === "ดำเนินการ") {
+        td.innerHTML = `<button>ลบ</button><button>แก้ไข</button>`;
+        addDeleteHandler(td.querySelector("button:first-child"));
+        addEditHandler(td.querySelector("button:last-child"));
+      } else {
+        let input = footerInputs[index];
+        if (input) {
+          let value = input.value.trim();
+          if (!value) emptyCheck = true;
+
+          if (input.tagName.toLowerCase() === "select") {
+            td.innerHTML = `
+              <select>
+                <option value="ยังไม่จ่าย"${value==="ยังไม่จ่าย"?' selected':''}>ยังไม่จ่าย</option>
+                <option value="จ่ายแล้ว"${value==="จ่ายแล้ว"?' selected':''}>จ่ายแล้ว</option>
+              </select>`;
+          } else {
+            td.textContent = value;
+          }
+        }
+      }
+      newRow.appendChild(td);
+    });
+
+    if (emptyCheck) {
+      alert("กรุณากรอกข้อมูลให้ครบ");
+      return;
+    }
+
+    tableBody.appendChild(newRow);
+    footerInputs.forEach(input => input.value = "");
+    updateTotals();
+  });
+
+  // รวมยอด
+  function updateTotals() {
+    const rows = tableBody.querySelectorAll("tr");
+    const totals = {};
+    const paidTotals = {};
+    const unpaidTotals = {};
+    let totalAll = 0;
+
+    rows.forEach(row => {
+      const name = row.cells[1]?.textContent.trim();
+      const price = parseFloat(row.cells[2]?.textContent);
+      const status = row.cells[3]?.querySelector("select")?.value;
+
+      if (!name || isNaN(price)) return;
+
+      if (!totals[name]) {
+        totals[name] = 0;
+        paidTotals[name] = 0;
+        unpaidTotals[name] = 0;
+      }
+
+      totals[name] += price;
+      totalAll += price;
+
+      if (status === "จ่ายแล้ว") paidTotals[name] += price;
+      else unpaidTotals[name] += price;
+    });
+
+    let html = "<table><tr><th>ชื่อ</th><th>ยอดรวมทั้งหมด (บาท)</th><th>จ่ายแล้ว (บาท)</th><th>ยังไม่จ่าย (บาท)</th></tr>";
+    for (let name in totals) {
+      html += `<tr>
+                  <td>${name}</td>
+                  <td>${totals[name].toFixed(2)}</td>
+                  <td>${paidTotals[name].toFixed(2)}</td>
+                  <td>${unpaidTotals[name].toFixed(2)}</td>
+               </tr>`;
+    }
+    html += "</table>";
+
+    document.getElementById("totalsByName").innerHTML = html;
+    document.getElementById("totalAll").textContent = "ยอดรวมทั้งหมด: " + totalAll.toFixed(2) + " บาท";
+  }
+
+  // เพิ่ม/ลบคอลัมน์
+  document.getElementById("addColumnBtn").addEventListener("click", function () {
+    const colName = prompt("กรอกชื่อคอลัมน์ใหม่:");
+    if (!colName) return;
+
+    const headerRow = depositTable.querySelector("thead tr");
+    const th = document.createElement("th");
+    th.textContent = colName;
+    headerRow.insertBefore(th, headerRow.lastElementChild);
+
+    depositTable.querySelectorAll("tbody tr, tfoot tr").forEach(row => {
+      const td = document.createElement("td");
+      td.innerHTML = `<input type="text" placeholder="${colName}">`;
+      row.insertBefore(td, row.lastElementChild);
+    });
+  });
+
+  document.getElementById("removeColumnBtn").addEventListener("click", function () {
+    const headerRow = depositTable.querySelector("thead tr");
+    if (headerRow.children.length <= 2) {
+      alert("ไม่สามารถลบได้อีกแล้ว");
+      return;
+    }
+    const indexToRemove = headerRow.children.length - 2;
+    headerRow.deleteCell(indexToRemove);
+    depositTable.querySelectorAll("tbody tr, tfoot tr").forEach(row => {
+      if (row.cells[indexToRemove]) row.deleteCell(indexToRemove);
+    });
+  });
+});
+</script>
+</body>
+</html>
